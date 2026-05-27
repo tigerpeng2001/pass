@@ -1,0 +1,54 @@
+================================================================================
+DEVOPS INFRASTRUCTURE CREDENTIALS & TLS STRATEGY
+================================================================================
+
+1. MANAGING ADMINISTRATIVE CREDENTIALS WITH 'PASS'
+--------------------------------------------------------------------------------
+The standard unix password manager ('pass') paired with a private, synced Git 
+repository is a highly secure, developer-native choice for small-to-medium Ops 
+teams. It leverages standard GPG encryption and isolates secrets into individual 
+text files, avoiding the database lock/merge conflicts common with KeePass 2.
+
+BEST PRACTICES FOR YOUR 'PASS' REPOSITORY STRUCTURE:
+- Structure files hierarchically: /personal, /family, and /work folders.
+- Use folder-level isolation via 'pass init -p <path> <GPG_KEY_IDs>' so engineers 
+  only see the credentials matching their specific team scopes.
+- Require all Ops team members to anchor their private GPG keys to a hardware 
+  security token (e.g., YubiKey) so keys can never be extracted from host RAM.
+- When an engineer offboards, you must immediately remove their GPG key from the 
+  relevant '.gpg-id' file and perform a total repository file re-encryption.
+
+THE PUSH-NOT-PULL INJECT RULE:
+Production Linux servers should NEVER directly connect to your Git repository to 
+"pull" and decrypt 'pass' files. Doing so exposes your entire credential vault 
+if one server is breached. Instead, an administrator or a CI/CD engine should 
+decrypt credentials locally in memory and "push" them securely down to target 
+servers over SSH or secure configuration management.
+
+
+2. AUTOMATING LEAF CERTIFICATES WITH ACME
+--------------------------------------------------------------------------------
+With the industry aggressively shifting toward maximum public TLS certificate 
+lifespans of under 90 days (dropping to a 47-day max limit by 2029), manually 
+generating, storing, and rotating leaf certificates inside 'pass' is completely 
+unsustainable. 
+
+Leaf certificates and their corresponding 4K private keys should bypass your 
+password manager entirely and be managed automatically via the ACME protocol.
+
+ACME IMPLEMENTATION ARCHITECTURE:
+- Public-Facing Nodes: Install an ACME client (e.g., Certbot or acme.sh) directly 
+  on the server OS. Automate renewal via cron or systemd timers using Let's 
+  Encrypt or ZeroSSL. The server generates its own 4K keys locally, requests 
+  signatures, and reloads its own web services hands-free.
+- Internal-Only Nodes: Deploy an internal CA with an ACME endpoint (e.g., Smallstep 
+  CA or HashiCorp Vault PKI). Internal servers check into this private URL to 
+  request short-lived certificates safely behind the company firewall.
+
+THE DIVISION OF LABOR:
+- Your 'pass' repo holds static infrastructure secrets: Cloud API tokens, 
+  DNS credentials, SSH keys, and External Account Binding (EAB) metadata.
+- The ACME architecture handles the dynamic lifecycle of all web and application 
+  certificates, completely eliminating manual rotation errors and Git bloat.
+================================================================================
+
