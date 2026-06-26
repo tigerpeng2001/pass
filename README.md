@@ -83,13 +83,13 @@ cd ~
 ts=$(date +%Y%m%d-%H%M%S)
 
 # Backup password store
-tar -czf "password-store-backup-$ts.tar.gz" .password-store
+tar -czf "/tmp/password-store-backup-$ts.tar.gz" .password-store
 
 # Backup secret key
-gpg --export-secret-keys --armor 9CD76D267E408A2B > "gpg-secret-9CD76D267E408A2B-$ts.asc"
+gpg --export-secret-keys --armor 9CD76D267E408A2B > "/tmp/gpg-secret-9CD76D267E408A2B-$ts.asc"
 
 # Verify backup files
-ls -lh "password-store-backup-$ts.tar.gz" "gpg-secret-9CD76D267E408A2B-$ts.asc"
+ls -lh "/tmp/password-store-backup-$ts.tar.gz" "/tmp/gpg-secret-9CD76D267E408A2B-$ts.asc"
 ```
 
 3. List your secret keys and verify that key ID exists:
@@ -135,7 +135,7 @@ If you cannot decrypt entries after the change, restore from the backup files cr
 
 ```bash
 cd ~
-ls -lh password-store-backup-*.tar.gz gpg-secret-9CD76D267E408A2B-*.asc
+ls -lh /tmp/password-store-backup-*.tar.gz /tmp/gpg-secret-9CD76D267E408A2B-*.asc
 ```
 
 2. Restore `.password-store` from your chosen backup archive:
@@ -143,13 +143,13 @@ ls -lh password-store-backup-*.tar.gz gpg-secret-9CD76D267E408A2B-*.asc
 ```bash
 cd ~
 mv .password-store ".password-store.broken.$(date +%Y%m%d-%H%M%S)"
-tar -xzf <YOUR_PASSWORD_STORE_BACKUP_FILE>.tar.gz
+tar -xzf /tmp/<YOUR_PASSWORD_STORE_BACKUP_FILE>.tar.gz
 ```
 
 3. Re-import your secret key backup (if needed):
 
 ```bash
-gpg --import <YOUR_SECRET_KEY_BACKUP_FILE>.asc
+gpg --import /tmp/<YOUR_SECRET_KEY_BACKUP_FILE>.asc
 ```
 
 4. Restart gpg-agent:
